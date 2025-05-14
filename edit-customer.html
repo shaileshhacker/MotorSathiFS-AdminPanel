@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Customer</title>
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="js/edit-customer.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Add this right after the opening <body> tag -->
+<div id="loader" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+</div>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-blue-800">Edit Customer Details</h1>
+        <button id="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+      </div>
+
+      <form id="editForm" class="bg-white p-6 rounded shadow space-y-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Profile Picture Section -->
+        <div class="col-span-2 flex flex-col items-center mb-4">
+          <div id="profilePicPreview" class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border-4 border-blue-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div class="mt-3">
+            <label class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700">
+              Upload Photo
+              <input id="profilePicUpload" type="file" accept="image/*" class="hidden" />
+            </label>
+          </div>
+          <div id="uploadProgress" class="mt-2 hidden text-sm text-blue-600">
+            Uploading image...
+          </div>
+        </div>
+
+        <!-- Personal Information -->
+        <div class="col-span-2 font-semibold text-blue-700">Personal Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Name</label>
+          <input name="name" type="text" class="border px-3 py-2 rounded w-full" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
+          <input name="mobileNumber" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input name="email" type="email" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+          <input name="dateOfBirth" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Gender</label>
+          <select name="gender" class="border px-3 py-2 rounded w-full">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Religion</label>
+          <input name="religion" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Caste</label>
+          <input name="caste" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Qualification</label>
+          <input name="qualification" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        
+        <!-- Address Information -->
+        <div class="col-span-2 font-semibold text-blue-700 mt-4">Address Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Address</label>
+          <input name="address" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Area</label>
+          <input name="area" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">City</label>
+          <input name="city" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">PIN Code</label>
+          <input name="pin" type="number" class="border px-3 py-2 rounded w-full" />
+        </div>
+        
+        <!-- Financial Information -->
+        <div class="col-span-2 font-semibold text-blue-700 mt-4">Financial Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Monthly Income</label>
+          <input name="monthlyIncome" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Source of Income</label>
+          <input name="sourceOfIncome" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Aadhaar Number</label>
+          <input name="aadhaarNumber" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">PAN Number</label>
+          <input name="pan" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        
+        <!-- Loan Information -->
+        <div class="col-span-2 font-semibold text-blue-700 mt-4">Loan Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Loan Amount</label>
+          <input name="loanAmount" type="number" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Down Payment</label>
+          <input name="downPayment" type="number" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">ROI (%)</label>
+          <input name="roi" type="number" step="0.01" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Term (months)</label>
+          <input name="term" type="number" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Plan</label>
+          <input name="plan" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Status</label>
+          <select name="status" class="border px-3 py-2 rounded w-full">
+            <option value="0">Pending</option>
+            <option value="1">Approved</option>
+            <option value="-1">Rejected</option>
+          </select>
+        </div>
+        
+        <!-- Vehicle Information -->
+        <div class="col-span-2 font-semibold text-blue-700 mt-4">Vehicle Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Model</label>
+          <input name="model" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Sub Model</label>
+          <input name="subModel" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Service Package</label>
+          <div class="mt-1">
+            <input name="servicePackage" type="checkbox" class="h-4 w-4 text-blue-600" />
+            <label class="ml-2 text-sm text-gray-700">Included</label>
+          </div>
+        </div>
+        
+        <!-- Other Information -->
+        <div class="col-span-2 font-semibold text-blue-700 mt-4">Other Information</div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Type</label>
+          <input disabled name="type" type="text" class="border px-3 py-2 rounded w-full" />
+        </div>
+
+        <div class="col-span-2 flex justify-end gap-2 pt-4">
+          <!-- <button type="button" id="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button> -->
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save Changes</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</body>
+</html>

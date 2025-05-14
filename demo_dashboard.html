@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authorized Users CRUD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+  <h1 class="text-2xl font-bold mb-4">Authorized Users</h1>
+
+  <div id="userTable" class="bg-white shadow rounded-lg p-4">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mobile</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="userList" class="divide-y divide-gray-200 bg-white">
+        <!-- Users will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Edit User Modal -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-xl font-semibold mb-4">Edit User</h2>
+      <form id="editUserForm" class="space-y-4">
+        <input type="hidden" id="editUsername" />
+        <div>
+          <label class="block text-sm font-medium">Name</label>
+          <input type="text" id="editName" class="w-full border rounded p-2" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Mobile Number</label>
+          <input type="text" id="editMobile" class="w-full border rounded p-2" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Type</label>
+          <select id="editType" class="w-full border rounded p-2">
+            <option>Admin</option>
+            <option>Dealer</option>
+            <option>DealerExecutive</option>
+          </select>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" id="cancelEdit" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+    import { remove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+    import { update } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD8xKLlb4dFDVEMxf8Sylvj7YvaYkkBaOs",
+      authDomain: "motorsathisolutions-ffe2d.firebaseapp.com",
+      databaseURL: "https://motorsathisolutions-ffe2d-default-rtdb.firebaseio.com",
+      projectId: "motorsathisolutions-ffe2d",
+      storageBucket: "motorsathisolutions-ffe2d.appspot.com",
+      messagingSenderId: "53556194475",
+      appId: "1:53556194475:web:7b346a6186bb39d5131bee",
+      measurementId: "G-DHTS2MR28Z"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db);
+
+    async function loadUsers() {
+      const snapshot = await get(child(dbRef, 'authorized_users'));
+      const userList = document.getElementById("userList");
+      userList.innerHTML = "";
+
+      if (snapshot.exists()) {
+        const users = snapshot.val();
+        Object.keys(users).forEach(key => {
+          const user = users[key];
+          userList.innerHTML += `
+            <tr>
+              <td class="px-4 py-2">${user.userName}</td>
+              <td class="px-4 py-2">${user.name}</td>
+              <td class="px-4 py-2">${user.mobileNumber}</td>
+              <td class="px-4 py-2">${user.type}</td>
+              <td class="px-4 py-2 space-x-2">
+                <button class="text-blue-600 hover:underline" onclick="editUser('${key}')">Edit</button>
+                <button class="text-red-600 hover:underline" onclick="deleteUser('${key}')">Delete</button>
+              </td>
+            </tr>`;
+        });
+      } else {
+        userList.innerHTML = `<tr><td colspan="5" class="px-4 py-2 text-center">No users found</td></tr>`;
+      }
+    }
+
+    // Edit User button handler
+window.editUser = (username) => {
+  get(child(dbRef, `authorized_users/${username}`)).then(snapshot => {
+    if (snapshot.exists()) {
+      const user = snapshot.val();
+      document.getElementById('editUsername').value = username;
+      document.getElementById('editName').value = user.name;
+      document.getElementById('editMobile').value = user.mobileNumber;
+      document.getElementById('editType').value = user.type;
+
+      // Show modal
+      document.getElementById('editModal').classList.remove('hidden');
+      document.getElementById('editModal').classList.add('flex');
+    }
+  });
+};
+
+// Cancel modal
+document.getElementById('cancelEdit').addEventListener('click', () => {
+  document.getElementById('editModal').classList.add('hidden');
+  document.getElementById('editModal').classList.remove('flex');
+});
+
+// Save updated user
+document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('editUsername').value;
+  const name = document.getElementById('editName').value;
+  const mobile = document.getElementById('editMobile').value;
+  const type = document.getElementById('editType').value;
+
+  const updatedData = {
+    name,
+    mobileNumber: mobile,
+    type
+  };
+
+  await update(ref(db, `authorized_users/${username}`), updatedData);
+  document.getElementById('editModal').classList.add('hidden');
+  document.getElementById('editModal').classList.remove('flex');
+  loadUsers();
+});
+
+    // window.editUser = (username) => {
+    //   alert('Edit user: ' + username);
+    //   // Add edit form popup/modal logic here
+    // };
+
+    window.deleteUser = async (username) => {
+      const confirmDelete = confirm(`Are you sure you want to delete ${username}?`);
+      if (!confirmDelete) return;
+
+      await remove(ref(db, `authorized_users/${username}`));
+      alert(`${username} deleted`);
+      loadUsers();
+    };
+
+    loadUsers();
+  </script>
+</body>
+</html>

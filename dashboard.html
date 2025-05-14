@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script type="module" src="js/dashboard.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Loading Overlay -->
+<div id="loader" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden">
+  <div class="flex flex-col items-center">
+    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+    <p class="text-white text-lg font-semibold">Loading customer data...</p>
+  </div>
+</div>
+  <div class="flex h-screen">
+     <!-- Sidebar -->
+  <aside class="w-64 bg-white p-6 shadow flex flex-col justify-between h-full">
+  <div>
+    <h2 class="text-xl font-bold text-blue-700 mb-6">Dashboard Menu</h2>
+    <ul class="space-y-2">
+      <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="usersLink">Authorized Users</a></li>
+      <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="dashboardLink">Customer Loans</a></li>
+      <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="pointsLink">Points System</a></li>
+    </ul>
+  </div>
+  
+  <!-- Logout Button -->
+  <div class="mt-6">
+    <button id="logoutBtn" class="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Logout</button>
+  </div>
+</aside>
+
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div id="usersManagementSection" class="hidden">
+      <!-- Authorized Users CRUD interface will go here -->
+       <div id="imagePreviewContainer" class="mb-4">
+  <!-- Image preview will be inserted here -->
+</div>
+    </div>
+    
+    <div id="loanDashboardSection">
+      <h1 class="text-3xl font-bold mb-6 text-blue-800 text-center">Customer Loan Dashboard</h1>
+
+      <div class="mb-4 flex flex-wrap items-center gap-4">
+        <select id="searchType" class="border px-3 py-2 rounded">
+          <option value="name">Search by Name</option>
+          <option value="mobile">Search by Mobile</option>
+          <option value="city">Search by City</option>
+        </select>
+        <input id="searchInput" type="text" placeholder="Search..." class="border px-3 py-2 rounded w-48" />
+        
+        <select id="statusFilter" class="border px-3 py-2 rounded">
+          <option value="" selected>All Status</option>
+          <option value="0">Pending</option>
+          <option value="1">Approved</option>
+          <option value="-1">Rejected</option>
+        </select>
+        
+        <select id="dealerDropdown" class="border px-3 py-2 rounded" hidden>
+          <option value="">All Dealer Executives</option>
+        </select>
+        
+        <select id="itemsPerPage" class="border px-3 py-2 rounded">
+          <option value="5" selected>5 per page</option>
+          <option value="10">10 per page</option>
+          <option value="20">20 per page</option>
+          <option value="50">50 per page</option>
+        </select>
+        
+        <button id="filterBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
+      </div>
+
+      <div id="dealers"></div>
+      
+      <!-- Pagination -->
+      <div id="pagination" class="flex justify-center items-center gap-2 mt-6"></div>
+    </div>
+    
+    <!-- Points System Section -->
+    <div id="pointsSystemSection" class="hidden" x-data="app()" x-init="fetchData()">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Points System Admin</h1>
+            <p class="text-gray-600">Manage all point values for different categories</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <template x-for="(category, index) in Object.keys(data.points)" :key="index">
+                    <button 
+                        @click="activeTab = category"
+                        :class="{
+                            'border-indigo-500 text-indigo-600': activeTab === category,
+                            'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== category
+                        }"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                        x-text="formatCategoryName(category)"
+                    ></button>
+                </template>
+            </nav>
+        </div>
+
+        <!-- Current Category Display -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900" x-text="formatCategoryName(activeTab)"></h2>
+                <p class="mt-1 text-sm text-gray-500">Edit the point values for this category</p>
+            </div>
+            
+            <!-- Data Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Option</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="(value, key) in data.points[activeTab]" :key="key">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="formatOptionName(key)"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input 
+                                        x-model="data.points[activeTab][key]" 
+                                        type="text" 
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                        @change="updateItem(activeTab, key, data.points[activeTab][key])"
+                                    >
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button 
+                                        @click="deleteItem(activeTab, key)"
+                                        class="text-red-600 hover:text-red-900"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add New Item Form -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <h3 class="text-md font-medium text-gray-900 mb-3">Add New Option</h3>
+                <div class="flex space-x-4">
+                    <div class="flex-grow">
+                        <label for="newOptionKey" class="block text-sm font-medium text-gray-700">Option Name</label>
+                        <input 
+                            type="text" 
+                            id="newOptionKey" 
+                            x-model="newOption.key"
+                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="e.g. new_category"
+                        >
+                    </div>
+                    <div class="flex-grow">
+                        <label for="newOptionValue" class="block text-sm font-medium text-gray-700">Value</label>
+                        <input 
+                            type="text" 
+                            id="newOptionValue" 
+                            x-model="newOption.value"
+                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="e.g. 10"
+                        >
+                    </div>
+                    <div class="flex items-end">
+                        <button 
+                            @click="addNewItem(activeTab)"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Changes Button -->
+        <div class="flex justify-end">
+            <button 
+                @click="saveChanges()"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                :disabled="isSaving"
+            >
+                <span x-show="!isSaving">Save All Changes</span>
+                <span x-show="isSaving">Saving...</span>
+            </button>
+        </div>
+
+        <!-- Toast Notification -->
+        <div 
+            x-show="showToast" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-2"
+            class="fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg"
+            :class="{
+                'bg-green-500 text-white': toastType === 'success',
+                'bg-red-500 text-white': toastType === 'error'
+            }"
+            x-text="toastMessage"
+            @click="showToast = false"
+            x-cloak
+        ></div>
+    </div>
+    </main>
+  </div>
+
+  <script>
+    // Add navigation functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const usersLink = document.getElementById('usersLink');
+      const dashboardLink = document.getElementById('dashboardLink');
+      const pointsLink = document.getElementById('pointsLink');
+      
+      const usersSection = document.getElementById('usersManagementSection');
+      const dashboardSection = document.getElementById('loanDashboardSection');
+      const pointsSection = document.getElementById('pointsSystemSection');
+      
+      // Show dashboard by default
+      dashboardSection.classList.remove('hidden');
+      
+      usersLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        usersSection.classList.remove('hidden');
+        dashboardSection.classList.add('hidden');
+        pointsSection.classList.add('hidden');
+      });
+      
+      dashboardLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        usersSection.classList.add('hidden');
+        dashboardSection.classList.remove('hidden');
+        pointsSection.classList.add('hidden');
+      });
+      
+      pointsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        usersSection.classList.add('hidden');
+        dashboardSection.classList.add('hidden');
+        pointsSection.classList.remove('hidden');
+      });
+    });
+
+    // Alpine.js app for Points System
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('app', () => ({
+            data: {
+                points: {
+                    credit_score: {},
+                    location: {},
+                    monthly_income_range: {},
+                    plan: {},
+                    religion: {},
+                    roi: {},
+                    source_of_income: {}
+                }
+            },
+            activeTab: 'credit_score',
+            newOption: {
+                key: '',
+                value: ''
+            },
+            showToast: false,
+            toastMessage: '',
+            toastType: 'success',
+            isSaving: false,
+            
+            fetchData() {
+                const pointsRef = firebase.ref(firebase.db, 'points');
+                
+                firebase.onValue(pointsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        this.data.points = data;
+                        this.showToastMessage('Data loaded successfully', 'success');
+                    } else {
+                        // Initialize with empty structure if no data exists
+                        this.saveInitialStructure();
+                    }
+                }, (error) => {
+                    this.showToastMessage('Error loading data: ' + error.message, 'error');
+                });
+            },
+            
+            saveInitialStructure() {
+                this.isSaving = true;
+                const pointsRef = firebase.ref(firebase.db, 'points');
+                
+                firebase.set(pointsRef, this.data.points)
+                    .then(() => {
+                        this.showToastMessage('Initial structure created', 'success');
+                    })
+                    .catch((error) => {
+                        this.showToastMessage('Error saving initial structure: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        this.isSaving = false;
+                    });
+            },
+            
+            formatCategoryName(category) {
+                return category.split('_').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+            },
+            
+            formatOptionName(option) {
+                if (option.includes('_')) {
+                    return option.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                }
+                return option;
+            },
+            
+            addNewItem(category) {
+                if (!this.newOption.key || !this.newOption.value) {
+                    this.showToastMessage('Please fill in both fields', 'error');
+                    return;
+                }
+                
+                const updates = {};
+                updates[`points/${category}/${this.newOption.key}`] = this.newOption.value;
+                
+                this.isSaving = true;
+                firebase.update(firebase.ref(firebase.db), updates)
+                    .then(() => {
+                        this.newOption.key = '';
+                        this.newOption.value = '';
+                        this.showToastMessage('New option added successfully', 'success');
+                    })
+                    .catch((error) => {
+                        this.showToastMessage('Error adding option: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        this.isSaving = false;
+                    });
+            },
+            
+            updateItem(category, key, value) {
+                const updates = {};
+                updates[`points/${category}/${key}`] = value;
+                
+                this.isSaving = true;
+                firebase.update(firebase.ref(firebase.db), updates)
+                    .then(() => {
+                        this.showToastMessage('Item updated successfully', 'success');
+                    })
+                    .catch((error) => {
+                        this.showToastMessage('Error updating item: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        this.isSaving = false;
+                    });
+            },
+            
+            deleteItem(category, key) {
+                if (!confirm(`Are you sure you want to delete "${key}"?`)) {
+                    return;
+                }
+                
+                const itemRef = firebase.ref(firebase.db, `points/${category}/${key}`);
+                
+                this.isSaving = true;
+                firebase.remove(itemRef)
+                    .then(() => {
+                        this.showToastMessage('Option deleted successfully', 'success');
+                    })
+                    .catch((error) => {
+                        this.showToastMessage('Error deleting option: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        this.isSaving = false;
+                    });
+            },
+            
+            saveChanges() {
+                // In this implementation, changes are saved immediately as they happen
+                // So this button is more of a "refresh" or "validate" action
+                this.showToastMessage('All changes are saved automatically', 'success');
+            },
+            
+            showToastMessage(message, type = 'success') {
+                this.toastMessage = message;
+                this.toastType = type;
+                this.showToast = true;
+                setTimeout(() => {
+                    this.showToast = false;
+                }, 3000);
+            }
+        }));
+    });
+  </script>
+</body>
+</html>

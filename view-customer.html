@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>View Customer</title>
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="js/view-customer.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Add this right after the opening <body> tag -->
+<div id="loader" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+  <p class="ml-4 text-white">Loading customer data...</p>
+</div>
+  <div class="flex h-screen">
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-blue-800">Customer Details</h1>
+        <a href="dashboard.html" class="text-blue-600 hover:text-blue-800">Back to Dashboard</a>
+      </div>
+
+      <div id="customerDetails" class="bg-white p-6 rounded shadow"></div>
+    </main>
+  </div>
+</body>
+</html>
