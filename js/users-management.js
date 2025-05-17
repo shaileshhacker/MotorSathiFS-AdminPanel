@@ -1,8 +1,9 @@
 import { db } from './firebase-config.js';
-import { ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
 export class UsersManager {
-  constructor() {
+  constructor(currentUser) {
+    this.currentUser = currentUser; // Store the currently logged-in user
     this.initUI();
     this.loadUsers();
   }
@@ -60,7 +61,6 @@ export class UsersManager {
               <div>
                 <label class="block text-sm font-medium text-gray-700">User Type</label>
                 <select id="type" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-                  <option value="Admin">Admin</option>
                   <option value="Dealer">Dealer</option>
                   <option value="DealerExecutive">Dealer Executive</option>
                 </select>
@@ -84,123 +84,102 @@ export class UsersManager {
     document.getElementById('userForm').addEventListener('submit', (e) => this.handleSubmit(e));
   }
 
-  loadUsers() {
+  async loadUsers() {
+  try {
     const usersRef = ref(db, 'authorized_users');
     onValue(usersRef, (snapshot) => {
-      const users = snapshot.val();
-      this.renderUsers(users);
+      try {
+        const users = snapshot.val();
+        this.renderUsers(users);
+      } catch (error) {
+        console.error('Error processing users data:', error);
+        alert('Error loading users data');
+      }
+    }, (error) => {
+      console.error('Error setting up users listener:', error);
+      alert('Error setting up users listener');
     });
+  } catch (error) {
+    console.error('Error initializing users load:', error);
+    alert('Error initializing users load');
   }
-
-  renderUsers(users) {
-    const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = '';
-
-    if (!users) return;
-
-    Object.entries(users).forEach(([userId, user]) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-            ${user.imageUrl ? `<img src="${user.imageUrl}" class="h-10 w-10 rounded-full">` : 
-            '<svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>'}
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">${user.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap">${user.userName}</td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <span class="px-2 py-1 text-xs rounded ${
-            user.type === 'Admin' ? 'bg-purple-100 text-purple-800' :
-            user.type === 'Dealer' ? 'bg-blue-100 text-blue-800' :
-            'bg-green-100 text-green-800'
-          }">${user.type}</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">${user.mobileNumber}</td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <button class="text-blue-600 hover:text-blue-900 mr-3 edit-btn" data-id="${userId}">Edit</button>
-          <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${userId}">Delete</button>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-
-    // Add event listeners to dynamic buttons
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.editUser(btn.dataset.id));
-    });
-
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.confirmDelete(btn.dataset.id));
-    });
-  }
-
-  showModal(user = null) {
-    const modal = document.getElementById('userModal');
-    const title = document.getElementById('modalTitle');
-    
-    if (user) {
-      title.textContent = 'Edit User';
-      document.getElementById('userId').value = user.id;
-      document.getElementById('name').value = user.name;
-      document.getElementById('userName').value = user.userName;
-      document.getElementById('mobileNumber').value = user.mobileNumber;
-      document.getElementById('password').value = user.password;
-      document.getElementById('type').value = user.type;
-    } else {
-      title.textContent = 'Add New User';
-      document.getElementById('userForm').reset();
-    }
-    
-    modal.classList.remove('hidden');
-
-     // Add image preview container
-  document.getElementById('imagePreviewContainer').innerHTML = `
-    <div class="flex flex-col items-center">
-      <div id="imagePreview" class="w-24 h-24 rounded-full bg-gray-200 mb-2 flex items-center justify-center overflow-hidden">
-        ${user?.imageUrl ? 
-          `<img src="${user.imageUrl}" class="w-full h-full object-cover">` :
-          `<svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>`
-        }
-      </div>
-      <label class="cursor-pointer bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-        Change Image
-        <input type="file" id="imageUpload" accept="image/*" class="hidden">
-      </label>
-    </div>
-  `;
-
-  // Initialize image upload
-  document.getElementById('imageUpload').addEventListener('change', (e) => this.handleImageUpload(e));
 }
 
-// Add new methods for image handling
-async handleImageUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  renderUsers(users) {
+  const tbody = document.getElementById('usersTableBody');
+  tbody.innerHTML = '';
 
-  if (!file.type.match('image.*')) {
-    alert('Please select an image file (jpg, png, etc.)');
-    return;
-  }
+  if (!users) return;
 
-  // Show preview
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    document.getElementById('imagePreview').innerHTML = 
-      `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-  };
-  reader.readAsDataURL(file);
+  Object.entries(users).forEach(([userId, user]) => {
+    const isCurrentUser = userId === this.currentUser.userName;
+    const isAdmin = user.type === 'Admin';
+    const canEdit = !isAdmin || isCurrentUser;
+    const canDelete = !isAdmin;
 
-  // Upload to Firebase Storage
-  this.currentImageFile = file; // Store for later upload during save
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+          ${user.imageUrl ? `<img src="${user.imageUrl}" class="h-10 w-10 rounded-full">` : 
+          '<svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>'}
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">${user.name}</td>
+      <td class="px-6 py-4 whitespace-nowrap">${user.userName}</td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <span class="px-2 py-1 text-xs rounded ${
+          user.type === 'Admin' ? 'bg-purple-100 text-purple-800' :
+          user.type === 'Dealer' ? 'bg-blue-100 text-blue-800' :
+          'bg-green-100 text-green-800'
+        }">${user.type}</span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">${user.mobileNumber}</td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        ${canEdit ? 
+          `<button class="text-blue-600 hover:text-blue-900 mr-3 edit-btn" data-id="${userId}">Edit</button>` : 
+          '<span class="text-gray-400">Edit</span>'}
+        ${canDelete ? 
+          `<button class="text-red-600 hover:text-red-900 delete-btn" data-id="${userId}">Delete</button>` : 
+          '<span class="text-gray-400">Delete</span>'}
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Add event listeners to dynamic buttons
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => this.editUser(btn.dataset.id));
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => this.confirmDelete(btn.dataset.id));
+  });
+}
+  async checkAdminExists() {
+    const usersRef = ref(db, 'authorized_users');
+    const snapshot = await get(usersRef);
+    if (!snapshot.exists()) return false;
+    
+    const users = snapshot.val();
+    return Object.values(users).some(user => user.type === 'Admin');
   }
 
   hideModal() {
-    document.getElementById('userModal').classList.add('hidden');
-  }
+  const modal = document.getElementById('userModal');
+  const form = document.getElementById('userForm');
+  
+  form.reset();
+  modal.classList.add('hidden');
+  
+  // Reset all fields to visible state
+  document.querySelectorAll('#userForm input, #userForm select').forEach(el => {
+    el.style.display = 'block';
+  });
+  document.querySelectorAll('#userForm label').forEach(el => {
+    el.style.display = 'block';
+  });
+}
 
   editUser(userId) {
     const userRef = ref(db, `authorized_users/${userId}`);
@@ -218,40 +197,209 @@ async handleImageUpload(e) {
     }
   }
 
-  deleteUser(userId) {
+  async deleteUser(userId) {
+    // Check if user is admin (shouldn't happen as button is hidden, but just in case)
+    const userRef = ref(db, `authorized_users/${userId}`);
+    const snapshot = await get(userRef);
+    const user = snapshot.val();
+    
+    if (user && user.type === 'Admin') {
+      alert('Cannot delete admin user');
+      return;
+    }
+    
     remove(ref(db, `authorized_users/${userId}`))
       .then(() => console.log('User deleted successfully'))
       .catch(error => console.error('Error deleting user:', error));
   }
-
-  handleSubmit(e) {
-    e.preventDefault();
+// Update the showModal method to enable editing of username and type
+async showModal(user = null) {
+  try {
+    const modal = document.getElementById('userModal');
+    const title = document.getElementById('modalTitle');
+    const form = document.getElementById('userForm');
     
-    const userId = document.getElementById('userId').value;
-    const userData = {
-      name: document.getElementById('name').value,
-      userName: document.getElementById('userName').value,
-      mobileNumber: document.getElementById('mobileNumber').value,
-      password: document.getElementById('password').value,
-      type: document.getElementById('type').value,
-      imageUrl: ""
-    };
+    // Reset form and enable all fields
+    form.reset();
+    document.querySelectorAll('#userForm input, #userForm select').forEach(el => {
+      el.style.display = 'block';
+      el.disabled = false;
+    });
+    document.querySelectorAll('#userForm label').forEach(el => {
+      el.style.display = 'block';
+    });
 
-    if (userId) {
-      // Update existing user
-      update(ref(db, `authorized_users/${userId}`), userData)
-        .then(() => {
+    if (user) {
+      title.textContent = 'Edit User';
+      document.getElementById('userId').value = user.id;
+      
+      if (user.type === 'Admin') {
+        // Special handling for admin user
+        if (user.id !== this.currentUser.userName) {
+          alert('You can only edit your own admin account');
           this.hideModal();
-        })
-        .catch(error => console.error('Error updating user:', error));
+          return;
+        }
+        
+        title.textContent = 'Change Admin Password';
+        
+        // Hide all fields except password
+        document.querySelectorAll('#userForm input:not(#password), #userForm select').forEach(el => {
+          el.style.display = 'none';
+        });
+        document.querySelectorAll('#userForm label:not([for="password"])').forEach(el => {
+          el.style.display = 'none';
+        });
+        
+        // Set current values (only password will be visible)
+        document.getElementById('name').value = user.name;
+        document.getElementById('userName').value = user.userName;
+        document.getElementById('mobileNumber').value = user.mobileNumber;
+        document.getElementById('password').value = ''; // Clear password field for new entry
+        document.getElementById('type').value = 'Admin';
+        document.getElementById('type').disabled = true;
+      } else {
+        // Regular user editing - allow editing all fields
+        document.getElementById('name').value = user.name;
+        document.getElementById('userName').value = user.userName;
+        document.getElementById('mobileNumber').value = user.mobileNumber;
+        document.getElementById('password').value = user.password; // Clear password (require re-entry)
+        document.getElementById('type').value = user.type;
+      }
     } else {
-      // Add new user
-      const newUserRef = ref(db, `authorized_users/${userData.userName.toLowerCase()}`);
-      set(newUserRef, userData)
-        .then(() => {
-          this.hideModal();
-        })
-        .catch(error => console.error('Error adding user:', error));
+      // New user
+      title.textContent = 'Add New User';
+      const adminExists = await this.checkAdminExists();
+      document.getElementById('type').innerHTML = adminExists
+        ? `<option value="Dealer">Dealer</option>
+           <option value="DealerExecutive">Dealer Executive</option>`
+        : `<option value="Admin">Admin</option>
+           <option value="Dealer">Dealer</option>
+           <option value="DealerExecutive">Dealer Executive</option>`;
     }
+    
+    modal.classList.remove('hidden');
+  } catch (error) {
+    console.error('Error showing modal:', error);
+    alert('Error initializing user form');
   }
+}
+
+// Update the handleSubmit method to handle username and type changes
+async handleSubmit(e) {
+  e.preventDefault();
+  
+  const userId = document.getElementById('userId').value;
+  const isEditing = !!userId;
+  const isAdminUser = isEditing && userId.toLowerCase() === this.currentUser.userName.toLowerCase();
+
+  try {
+    if (isEditing) {
+      const existingUserRef = ref(db, `authorized_users/${userId}`);
+      const snapshot = await get(existingUserRef);
+      const existingUser = snapshot.val();
+      
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+      
+      if (existingUser.type === 'Admin' && !isAdminUser) {
+        alert('Only the admin can edit their own account');
+        return;
+      }
+      
+      let updateData = {};
+      const newUsername = document.getElementById('userName').value.toLowerCase();
+      
+      if (isAdminUser) {
+        // Admin password change
+        const newPassword = document.getElementById('password').value;
+        if (!newPassword) {
+          alert('Please enter a new password');
+          return;
+        }
+        updateData = { password: newPassword };
+      } else {
+        // Regular user edit - allow all fields to be changed
+        updateData = {
+          name: document.getElementById('name').value,
+          userName: newUsername,
+          mobileNumber: document.getElementById('mobileNumber').value,
+          type: document.getElementById('type').value
+        };
+        
+        // Only update password if it was provided
+        const newPassword = document.getElementById('password').value;
+        if (newPassword) {
+          updateData.password = newPassword;
+        }
+        
+        // If username changed, we need to create new record and delete old one
+        if (newUsername !== userId.toLowerCase()) {
+          // Check if new username already exists
+          const newUserRef = ref(db, `authorized_users/${newUsername}`);
+          const newUserSnapshot = await get(newUserRef);
+          if (newUserSnapshot.exists()) {
+            alert('Username already exists');
+            return;
+          }
+          
+          // Create new user record with new username
+          await set(newUserRef, {
+            ...existingUser,
+            ...updateData
+          });
+          
+          // Delete old user record
+          await remove(existingUserRef);
+          
+          // If editing current user, update currentUser reference
+          if (userId === this.currentUser.userName) {
+            this.currentUser.userName = newUsername;
+          }
+          
+          this.hideModal();
+          return;
+        }
+      }
+      
+      // If username didn't change, just update the record
+      await update(ref(db, `authorized_users/${userId}`), updateData);
+    } else {
+      // New user creation
+      const formData = {
+        name: document.getElementById('name').value,
+        userName: document.getElementById('userName').value.toLowerCase(),
+        mobileNumber: document.getElementById('mobileNumber').value,
+        password: document.getElementById('password').value,
+        type: document.getElementById('type').value,
+        imageUrl: ""
+      };
+      
+      if (formData.type === 'Admin') {
+        const adminExists = await this.checkAdminExists();
+        if (adminExists) {
+          alert('Admin user already exists. There can be only one admin.');
+          return;
+        }
+      }
+      
+      // Check if username already exists
+      const userRef = ref(db, `authorized_users/${formData.userName}`);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        alert('Username already exists');
+        return;
+      }
+      
+      await set(userRef, formData);
+    }
+    
+    this.hideModal();
+  } catch (error) {
+    console.error('Error saving user:', error);
+    alert('Error saving user: ' + error.message);
+  }
+}
+
 }
