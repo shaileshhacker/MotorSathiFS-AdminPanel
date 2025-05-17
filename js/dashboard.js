@@ -32,12 +32,24 @@ let totalItems = 0;
 let filteredUsers = [];
 let expandedUsers = {};
 
+// Initialize UsersManager with current user
+function initializeUsersManager() {
+  // Get current user from localStorage or your authentication system
+  const currentUser = {
+    userName: localStorage.getItem('msfs_admin_username') || 'admin', // Replace with actual username
+    type: 'Admin' // Or get this from your auth system
+  };
+
+  // Initialize UsersManager with current user
+  new UsersManager(currentUser);
+}
+
 // Tab switching functionality
   document.getElementById('usersLink').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('loanDashboardSection').classList.add('hidden');
     document.getElementById('usersManagementSection').classList.remove('hidden');
-    new UsersManager();
+    initializeUsersManager(); // Initialize when users tab is clicked
   });
 
   document.getElementById('dashboardLink').addEventListener('click', (e) => {
@@ -431,6 +443,8 @@ function hideLoader() {
 document.getElementById("logoutBtn").addEventListener("click", () => {
     window.location.href = "index.html"; // redirect to login page
     localStorage.removeItem('is_msfs_admin_logged_in');
+    localStorage.removeItem('msfs_admin_username');
+    localStorage.removeItem('msfs_admin_type');
   // const auth = getAuth();
   // signOut(auth).then(() => {
     // window.location.href = "login.html"; // redirect to login page
