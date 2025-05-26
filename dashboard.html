@@ -179,7 +179,7 @@
                             type="text" 
                             id="newOptionKey" 
                             x-model="newOption.key"
-                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-1 py-1"
                             placeholder="e.g. new_category"
                         >
                     </div>
@@ -189,7 +189,7 @@
                             type="text" 
                             id="newOptionValue" 
                             x-model="newOption.value"
-                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-1 py-1"
                             placeholder="e.g. 10"
                         >
                     </div>
@@ -368,7 +368,7 @@
                 }
                 
                 const updates = {};
-                updates[`points/${category}/${this.newOption.key}`] = this.newOption.value;
+                updates[`points/${category}/${this.newOption.key}`] = Number(this.newOption.value);
                 
                 this.isSaving = true;
                 firebase.update(firebase.ref(firebase.db), updates)
