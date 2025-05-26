@@ -27,13 +27,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCustomerData(dealerId, userId);
   setupEventListeners();
 });
-
+let userData = null;
 async function loadCustomerData(dealerId, userId) {
   showLoader();
   try {
     const dbRef = ref(db, currentEditPath);
     onValue(dbRef, (snapshot) => {
       const user = snapshot.val();
+      userData = user; // Store user data for later use
       if (!user) {
         window.location.href = 'dashboard.html';
         return;
@@ -105,16 +106,14 @@ function populateForm(user) {
     try {
       // Convert status to string and ensure it's valid
       const statusValue = String(user.status || 0);
-      
+
       if(statusValue === '1' || statusValue === '2') {
         form.status.value = '0';
         userData.status = Number(statusValue);
-        console.log('status '+userData.status);
       }else{
         // Set the value and verify selection
         form.status.value = statusValue;
       }
-      
       // Debug output
       console.log('Status selection:', {
         availableOptions: Array.from(form.status.options).map(o => o.value),
@@ -189,20 +188,30 @@ function handleProfilePicUpload(e) {
 async function handleFormSubmit(e) {
   e.preventDefault();
   showLoader();
-  let status = Number(form.status.value);
-  if(status === 3) {
-    if(userData.status === 0 || userData.status === -1 || userData.status === 2) {
-      status = 2; 
-    }
-    else if(userData.status === 1 || userData.status === 3) {
-      status = 3; 
-    }else{
-      status = userData.status;
-    }
-  }else{
-    status = userData.status;
+  let inputStatus = Number(form.status.value);
+let currentStatus = userData.status;
+let status;
+
+if (inputStatus === 0) {
+  if (currentStatus === 1 || currentStatus === 2) {
+    status = currentStatus;
+  } else {
+    status = 0;
   }
-  
+} else if (inputStatus === 3 || inputStatus === 0) {
+  if ([0, -1, 2].includes(currentStatus)) {
+    status = 2;
+  } else if ([1, 3].includes(currentStatus)) {
+    status = 3;
+  } else {
+    status = currentStatus;
+  }
+} else {
+  console.log('status ' + currentStatus);
+  status = inputStatus;
+}
+
+
   const updatedData = {
     name: form.name.value,
     city: form.city.value,
