@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
-import { ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { ref, get, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
 
 // Your Firebase configuration
@@ -33,4 +33,4 @@ window.firebase = {
   remove
 };
 
-export { db, storage, ref, onValue, set, update, remove };
+export { db, storage, ref, onValue, set, update, remove, get };
