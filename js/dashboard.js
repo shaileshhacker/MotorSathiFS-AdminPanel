@@ -163,7 +163,10 @@ function matchesFilters(user, searchTerm, status) {
   
   const searchMatch = !searchTerm || 
                      (searchField && searchField.toString().toLowerCase().includes(searchTerm.toLowerCase()));
-  const statusMatch = status === "" || Number(user.status) === Number(status);
+  let statusMatch = status === "" || Number(user.status) === Number(status);
+  if((user.status === 1 || user.status === 2) && Number(status) === 0){
+    statusMatch = true
+  }
   
   return searchMatch && statusMatch;
 }
