@@ -27,6 +27,7 @@
       <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="usersLink">Authorized Users</a></li>
       <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="dashboardLink">Customer Loans</a></li>
       <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="pointsLink">Points System</a></li>
+      <li><a href="#" class="sidebar-link text-gray-700 hover:text-blue-600" id="trashLink">Trash 🗑️</a></li>
     </ul>
   </div>
   
@@ -76,6 +77,22 @@
         </select>
         
         <button id="filterBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
+      </div>
+
+      <div id="dealers"></div>
+      
+      <!-- Pagination -->
+      <div id="pagination" class="flex justify-center items-center gap-2 mt-6"></div>
+    </div>
+
+    <div id="trashDashboardSection" class="hidden">
+      <h1 class="text-3xl font-bold mb-6 text-blue-800 text-center">Trash 🗑️</h1>
+
+      <div class="mb-4 flex flex-wrap items-center gap-4">
+        
+        <select id="dealerDropdown" class="border px-3 py-2 rounded" hidden>
+          <option value="">All Dealer Executives</option>
+        </select>
       </div>
 
       <div id="dealers"></div>
@@ -228,19 +245,23 @@
       const usersLink = document.getElementById('usersLink');
       const dashboardLink = document.getElementById('dashboardLink');
       const pointsLink = document.getElementById('pointsLink');
+      const trashLink = document.getElementById('trashLink');
       
       const usersSection = document.getElementById('usersManagementSection');
       const dashboardSection = document.getElementById('loanDashboardSection');
       const pointsSection = document.getElementById('pointsSystemSection');
+      const trashSection = document.getElementById('trashDashboardSection');
       
       // Show dashboard by default
       dashboardSection.classList.remove('hidden');
+      
       
       usersLink.addEventListener('click', (e) => {
         e.preventDefault();
         usersSection.classList.remove('hidden');
         dashboardSection.classList.add('hidden');
         pointsSection.classList.add('hidden');
+        trashSection.classList.add('hidden');
       });
       
       dashboardLink.addEventListener('click', (e) => {
@@ -248,6 +269,7 @@
         usersSection.classList.add('hidden');
         dashboardSection.classList.remove('hidden');
         pointsSection.classList.add('hidden');
+        trashSection.classList.add('hidden');
       });
       
       pointsLink.addEventListener('click', (e) => {
@@ -255,6 +277,15 @@
         usersSection.classList.add('hidden');
         dashboardSection.classList.add('hidden');
         pointsSection.classList.remove('hidden');
+        trashSection.classList.add('hidden');
+      });
+
+      trashLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        usersSection.classList.add('hidden');
+        dashboardSection.classList.add('hidden');
+        pointsSection.classList.add('hidden');
+        trashSection.classList.remove('hidden');
       });
     });
 
