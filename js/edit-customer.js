@@ -106,8 +106,14 @@ function populateForm(user) {
       // Convert status to string and ensure it's valid
       const statusValue = String(user.status || 0);
       
-      // Set the value and verify selection
-      form.status.value = statusValue;
+      if(statusValue === '1' || statusValue === '2') {
+        form.status.value = '0';
+        userData.status = Number(statusValue);
+        console.log('status '+userData.status);
+      }else{
+        // Set the value and verify selection
+        form.status.value = statusValue;
+      }
       
       // Debug output
       console.log('Status selection:', {
@@ -183,12 +189,25 @@ function handleProfilePicUpload(e) {
 async function handleFormSubmit(e) {
   e.preventDefault();
   showLoader();
+  let status = Number(form.status.value);
+  if(status === 3) {
+    if(userData.status === 0 || userData.status === -1 || userData.status === 2) {
+      status = 2; 
+    }
+    else if(userData.status === 1 || userData.status === 3) {
+      status = 3; 
+    }else{
+      status = userData.status;
+    }
+  }else{
+    status = userData.status;
+  }
   
   const updatedData = {
     name: form.name.value,
     city: form.city.value,
     loanAmount: Number(form.loanAmount.value),
-    status: Number(form.status.value),
+    status: status,
     aadhaarNumber: form.aadhaarNumber.value,
     address: form.address.value,
     area: form.area.value,
