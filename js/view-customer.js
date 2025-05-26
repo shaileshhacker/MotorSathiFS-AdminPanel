@@ -18,13 +18,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadCustomerDetails(dealerId, userId) {
   showLoader();
   try {
-    const dbRef = ref(db, `authorized_users_data/${dealerId}/${userId}`);
+    // Check if we're viewing from trash
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromTrash = urlParams.get('from') === 'trash';
+    
+    const path = fromTrash ? `trash/authorized_users_data/${dealerId}/${userId}` : `authorized_users_data/${dealerId}/${userId}`;
+    const dbRef = ref(db, path);
+    
     onValue(dbRef, (snapshot) => {
       const user = snapshot.val();
       if (!user) {
         window.location.href = 'dashboard.html';
         return;
       }
+      
+      // Add a banner if viewing from trash
+      if (fromTrash) {
+        document.getElementById('customerDetails').innerHTML = `
+          <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+            <p class="font-bold">Note</p>
+            <p>This customer is currently in the trash. Archived on: ${user.archivedAt ? new Date(user.archivedAt).toLocaleString() : 'Unknown'}</p>
+          </div>
+        `;
+      }
+      
       renderCustomerDetails(user);
       hideLoader();
     }, { onlyOnce: true });
